@@ -1,0 +1,5 @@
+{
+  "name": "Smart EV Monitor",
+  "description": "一个用于监控电动汽车基础设施、负荷预测和车队分析的高保真科幻仪表盘。",
+  "requestFramePermissions": []
+}
