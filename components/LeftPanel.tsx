@@ -43,12 +43,12 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     <div className="flex flex-col h-full gap-4">
       {/* 1. Load Forecast */}
       <Card 
-        title={isGlobal ? "全市负荷预测" : "区域负荷预测"} 
-        className={`flex-[2] transition-colors duration-500 ${isHighLoad ? 'border-tech-orange shadow-[0_0_15px_rgba(255,69,0,0.3)]' : ''}`}
+        title={isGlobal ? "全市充电需求预测" : "区域充电负荷预测"} 
+        className={`transition-colors duration-500 ${isHighLoad ? 'border-tech-orange shadow-[0_0_15px_rgba(255,69,0,0.3)]' : ''}`}
         titleRight={isHighLoad ? (
           <div className="flex items-center gap-1 text-tech-orange animate-pulse font-bold">
             <AlertTriangle size={12} />
-            <span>高负荷预警</span>
+            <span>充电负荷预警</span>
           </div>
         ) : null}
       >
@@ -76,7 +76,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 strokeWidth={2}
                 fillOpacity={1} 
                 fill="url(#colorActual)" 
-                name="实际负荷"
+                name="实时负荷"
               />
               <Area 
                 type="monotone" 
@@ -84,7 +84,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 stroke={COLORS.blue} 
                 strokeDasharray="5 5" 
                 fill="url(#colorForecast)" 
-                name="预测负荷"
+                name="预测趋势"
               />
               <ReferenceLine x="14:00" stroke={COLORS.orange} label={{ value: '当前', fill: COLORS.orange, fontSize: 10 }} />
             </AreaChart>
@@ -92,9 +92,9 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           
           {/* Visual Alert Overlay */}
           {isHighLoad && (
-             <div className="absolute top-2 right-2 bg-tech-orange/10 border border-tech-orange/50 p-2 rounded text-tech-orange text-xs max-w-[150px] backdrop-blur-sm">
-                <p className="font-bold flex items-center gap-1"><Zap size={10} /> 电网过载</p>
-                <p className="text-[9px]">负荷超过90%，建议进行削峰填谷。</p>
+             <div className="absolute top-2 right-2 bg-tech-orange/15 border border-tech-orange/60 p-2 rounded text-tech-orange text-xs max-w-[160px] backdrop-blur-md shadow-lg shadow-orange-950/20">
+                <p className="font-bold flex items-center gap-1 mb-1"><Zap size={10} /> 充电负荷过高</p>
+                <p className="text-[10px] leading-tight opacity-90">当前区域负荷已超过90%，建议通过策略引导用户有序充电。</p>
              </div>
           )}
         </div>
@@ -125,15 +125,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
         </div>
       </Card>
 
-      {/* 3. Cluster Load Analysis (New) */}
+      {/* 3. Cluster Load Analysis */}
       <Card title="群体行为聚类负荷分析" className="flex-[3]">
         <div className="w-full h-full min-h-[160px] flex flex-col">
             <div className="flex justify-end gap-3 mb-2 px-2">
-                {/* Custom Legend / Filter Hint */}
                 <div className="flex gap-2 text-[9px] text-tech-dim">
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#ff4500]"></div> 价格敏感型 (夜间)</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#00ffff]"></div> 信息依赖型 (随机)</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#1e90ff]"></div> 风险感知型 (规律)</span>
+                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#ff4500]"></div> 价格敏感型</span>
+                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#00ffff]"></div> 信息依赖型</span>
+                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-[#1e90ff]"></div> 风险感知型</span>
                 </div>
             </div>
             
@@ -158,7 +157,6 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                     <YAxis tick={{ fill: COLORS.textDim, fontSize: 10 }} />
                     <Tooltip content={<CustomTooltip />} />
                     
-                    {/* Stacked Area Chart for Cumulative Load Effect */}
                     <Area 
                         type="monotone" 
                         dataKey={UserType.PriceSensitive} 
@@ -195,8 +193,6 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                         fillOpacity={0.2}
                         name="其他"
                     />
-                    
-                    {/* Current Time Indicator */}
                     <ReferenceLine x="14:00" stroke="white" strokeDasharray="3 3" strokeOpacity={0.5} />
                 </AreaChart>
             </ResponsiveContainer>
