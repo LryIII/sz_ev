@@ -28,6 +28,7 @@ interface CenterPanelProps {
   isPlaying: boolean;
   togglePlay: () => void;
   selectedClusterId?: string;
+  onOptimizedTimeChange?: (time: number) => void;
 }
 
 const SHENZHEN_CENTER: [number, number] = [22.5500, 114.0850];
@@ -64,7 +65,8 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   gridZones,
   isPlaying,
   togglePlay,
-  selectedClusterId = 'all'
+  selectedClusterId = 'all',
+  onOptimizedTimeChange
 }) => {
   const [timeB, setTimeB] = useState<number>(timeA);
   const [isSynced, setIsSynced] = useState<boolean>(true);
@@ -76,6 +78,11 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   useEffect(() => {
     if (isSynced) setTimeB(timeA);
   }, [timeA, isSynced]);
+
+  // Notify parent whenever optimized time changes
+  useEffect(() => {
+    onOptimizedTimeChange?.(timeB);
+  }, [timeB, onOptimizedTimeChange]);
 
   const toggleSync = () => setIsSynced(!isSynced);
   const resetView = () => {

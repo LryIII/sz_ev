@@ -19,6 +19,9 @@ import { Activity, Clock, Filter } from 'lucide-react';
 export default function App() {
   const [currentGridId, setCurrentGridId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(14.5);
+  // Lifted state for the optimized scenario time to ensure RightPanel syncs with CenterPanel slider
+  const [optimizedTime, setOptimizedTime] = useState<number>(14.5);
+  
   const [selectedClusterId, setSelectedClusterId] = useState<string>('all');
   const [isPlaying, setIsPlaying] = useState(false);
   const [gridZones, setGridZones] = useState<GridZone[]>(GRID_ZONES);
@@ -156,8 +159,28 @@ export default function App() {
                 setSelectedClusterId={setSelectedClusterId} 
             />
         </section>
-        <section className="flex-1 h-full"><CenterPanel currentGrid={currentGridId} onGridSelect={setCurrentGridId} vehicles={[]} time={currentTime} setTime={setCurrentTime} gridZones={gridZones} isPlaying={isPlaying} togglePlay={() => setIsPlaying(!isPlaying)} selectedClusterId={selectedClusterId} /></section>
-        <section className="w-[25%] min-w-[320px] h-full"><RightPanel loadData={generateLoadData(currentGridId === null)} currentGridId={currentGridId} selectedClusterId={selectedClusterId} /></section>
+        <section className="flex-1 h-full">
+          <CenterPanel 
+            currentGrid={currentGridId} 
+            onGridSelect={setCurrentGridId} 
+            vehicles={[]} 
+            time={currentTime} 
+            setTime={setCurrentTime} 
+            gridZones={gridZones} 
+            isPlaying={isPlaying} 
+            togglePlay={() => setIsPlaying(!isPlaying)} 
+            selectedClusterId={selectedClusterId}
+            onOptimizedTimeChange={setOptimizedTime}
+          />
+        </section>
+        <section className="w-[25%] min-w-[320px] h-full">
+          <RightPanel 
+            loadData={generateLoadData(currentGridId === null)} 
+            currentGridId={currentGridId} 
+            selectedClusterId={selectedClusterId} 
+            time={optimizedTime}
+          />
+        </section>
       </main>
     </div>
   );

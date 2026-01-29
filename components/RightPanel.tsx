@@ -10,6 +10,7 @@ interface RightPanelProps {
   loadData: LoadDataPoint[];
   currentGridId: string | null;
   selectedClusterId: string;
+  time: number;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -46,14 +47,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const RightPanel: React.FC<RightPanelProps> = ({ 
   loadData, 
   currentGridId,
-  selectedClusterId
+  selectedClusterId,
+  time
 }) => {
   const [priceIncentive, setPriceIncentive] = useState<number>(1.5);
 
   const transferData = useMemo(() => {
     if (!currentGridId) return [];
     
-    const baseData = getTransferData(currentGridId, 14.5);
+    // Dynamic transfer data based on current optimized time
+    const baseData = getTransferData(currentGridId, time);
     
     let clusterFactor = 1.0;
     if (selectedClusterId !== 'all') {
@@ -67,7 +70,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         ...item,
         amount: parseFloat((item.amount * clusterFactor * priceFactor).toFixed(1))
     }));
-  }, [currentGridId, selectedClusterId, priceIncentive]);
+  }, [currentGridId, selectedClusterId, priceIncentive, time]);
 
   const rangeData = loadData.map(d => ({
       ...d,
@@ -77,6 +80,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const totalTransfer = transferData.reduce((acc, curr) => acc + curr.amount, 0).toFixed(1);
   const projectedCostReduction = (priceIncentive * 8.5).toFixed(1);
   const transferRatio = (25 + priceIncentive * 11).toFixed(1);
+
+  const formatTime = (t: number) => {
+    const h = Math.floor(t) % 24;
+    const m = Math.floor((t % 1) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="flex flex-col h-full gap-4">
@@ -213,9 +222,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="flex-1 flex flex-col justify-start gap-2 overflow-y-auto custom-scrollbar pr-1 pt-1">
                 {currentGridId ? (
                     transferData.map((t, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs shrink-0">
-                            <span className="w-10 text-right font-mono text-tech-orange text-[10px]">{currentGridId}</span>
-                            <div className="flex-1 h-5 bg-gray-800/50 rounded flex items-center relative overflow-hidden group">
+                        <div key={i} className="flex items-center gap-2 text-xs shrink-0 group">
+                            <div className="w-16 flex items-center justify-end gap-1.5 font-mono">
+                                <span className="text-tech-orange text-[10px]">{currentGridId}</span>
+                                <span className="text-[9px] text-tech-dim bg-white/5 px-1 rounded">{formatTime(time)}</span>
+                            </div>
+                            <div className="flex-1 h-5 bg-gray-800/50 rounded flex items-center relative overflow-hidden">
                                 <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-20 text-tech-cyan">
                                     <ArrowRight size={8} /> <ArrowRight size={8} />
                                 </div>
@@ -223,7 +235,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                                     className="h-full bg-gradient-to-r from-tech-orange/50 to-tech-cyan/50 transition-all duration-300" 
                                     style={{ width: `${Math.min(100, (t.amount / 20) * 100)}%` }}
                                 ></div>
-                                <span className="absolute right-2 text-[9px] text-white font-bold text-shadow-sm">{t.amount} MW</span>
+                                <span className="absolute right-2 text-[9px] text-white font-bold text-shadow-sm group-hover:scale-105 transition-transform">{t.amount} MW</span>
                             </div>
                             <span className="w-10 font-mono text-tech-cyan text-[10px]">{t.target}</span>
                         </div>
