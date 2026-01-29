@@ -2,8 +2,9 @@ export interface LoadDataPoint {
   time: string;
   actual: number | null;
   forecast: number | null;
-  lowerBound?: number; // For confidence interval
-  upperBound?: number;
+  lowerBound?: number; // Regulation Lower Limit
+  upperBound?: number; // Regulation Upper Limit
+  optimized?: number; // Optimized Load
 }
 
 export interface PricingDataPoint {
@@ -21,23 +22,6 @@ export interface ClusterLoadPoint {
   [UserType.Unknown]: number;
 }
 
-export interface Station {
-  id: string;
-  name: string;
-  score: number;
-  available: number;
-  total: number;
-  status: StationStatus;
-  details: {
-    convenience: number;
-    price: number;
-    speed: number;
-    service: number;
-  };
-}
-
-export type StationStatus = 'Online' | 'Offline' | 'Maintenance';
-
 export interface UserProfileData {
   subject: string;
   A: number; // Selected Region/Global
@@ -50,6 +34,18 @@ export interface FleetStat {
   color: string;
 }
 
+// Aggregated Cluster instead of individual vehicle
+export interface VehicleCluster {
+  id: string;
+  name: string;
+  region: string;
+  count: number;
+  avgSoc: number;
+  type: 'Operational' | 'Private' | 'Special';
+  regulationCapacity: number; // MW
+}
+
+// Individual vehicle kept for compatibility if needed, but not primarily displayed in list
 export interface Vehicle {
   id: string;
   plate: string;
@@ -63,6 +59,7 @@ export interface Vehicle {
 export interface GridZone {
   id: string;
   load: number; // 0-100 heatmap intensity
+  optimizedLoad: number; // For Map B
   vehicleCount: number;
   x: number; // grid coordinate X
   y: number; // grid coordinate Y
