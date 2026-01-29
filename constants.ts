@@ -16,195 +16,199 @@ export const COLORS = {
   textDim: '#94a3b8',
 };
 
-// --- Mock Data Generators ---
+// --- Mapping Region Names to Grid IDs ---
+export const REGION_TO_GRID: Record<string, string[]> = {
+    '南山区': ['G-6', 'G-7', 'G-11', 'G-12'],
+    '福田区': ['G-8', 'G-13', 'G-18'],
+    '宝安区': ['G-1', 'G-5', 'G-6', 'G-10'],
+    '罗湖区': ['G-9', 'G-14', 'G-19'],
+    '龙岗区': ['G-15', 'G-16', 'G-21', 'G-22', 'G-23'],
+    '全域': ['G-12', 'G-13', 'G-7'],
+};
 
 export const generateLoadData = (isGlobal: boolean): LoadDataPoint[] => {
   const data: LoadDataPoint[] = [];
   for (let i = 0; i <= 24; i++) {
-    const baseLoad = isGlobal ? 500 : 80;
-    const randomVar = Math.random() * (isGlobal ? 50 : 10);
-    const hourFactor = (Math.sin((i - 6) / 3) + Math.sin((i - 15) / 3)) * (isGlobal ? 150 : 30);
-    
+    const baseLoad = isGlobal ? 8500 : 420; 
+    const randomVar = Math.random() * (isGlobal ? 400 : 50);
+    const hourFactor = (Math.sin((i - 6) / 3) + Math.sin((i - 15) / 3)) * (isGlobal ? 1200 : 150);
     const actualLoad = baseLoad + hourFactor + randomVar;
-    
     data.push({
       time: `${i}:00`,
       actual: i <= 14 ? actualLoad : null,
       forecast: actualLoad,
-      optimized: actualLoad * 0.85, 
-      lowerBound: actualLoad * 0.7, 
-      upperBound: actualLoad * 1.3, 
+      optimized: actualLoad * 0.82, 
+      lowerBound: actualLoad * 0.65, 
+      upperBound: actualLoad * 1.35, 
     });
   }
   return data;
 };
 
-export const generateClusterLoadData = (isGlobal: boolean): ClusterLoadPoint[] => {
-  const data: ClusterLoadPoint[] = [];
-  const scale = isGlobal ? 10 : 2; 
-
-  for (let i = 0; i <= 24; i++) {
-    const priceLoad = (i < 7 || i > 22 ? 40 : 5) * scale + Math.random() * 5 * scale;
-    const riskLoad = (15 + (i > 7 && i < 20 ? 10 : 0)) * scale + Math.random() * 2 * scale;
-    const infoLoad = (10 + Math.max(0, Math.sin((i - 12)/2)*20) + Math.max(0, Math.sin((i - 19)/2)*25)) * scale;
-    const unknownLoad = 5 * scale + Math.random() * 2 * scale;
-
-    data.push({
-      time: `${i}:00`,
-      [UserType.InfoDependent]: Math.floor(infoLoad),
-      [UserType.RiskAware]: Math.floor(riskLoad),
-      [UserType.PriceSensitive]: Math.floor(priceLoad),
-      [UserType.Unknown]: Math.floor(unknownLoad),
-    });
-  }
-  return data;
-};
-
-export const PRICING_DATA: PricingDataPoint[] = Array.from({ length: 12 }, (_, i) => ({
-  time: `${i * 2}:00`,
-  price: 0.5 + Math.random() * 1.5,
-  congestion: 20 + Math.random() * 70,
-  temp: 20 + Math.random() * 10
-}));
-
+// --- Behavioral Profiles Config ---
 export const USER_PROFILES_GLOBAL = [
-  { subject: '信息依赖型', A: 30, fullMark: 100, color: COLORS.blue },
-  { subject: '风险感知型', A: 20, fullMark: 100, color: COLORS.orange },
-  { subject: '价格敏感型', A: 40, fullMark: 100, color: COLORS.cyan },
-  { subject: '习惯/其他', A: 10, fullMark: 100, color: COLORS.gray },
-];
-
-export const USER_PROFILES_LOCAL = [
-  { subject: '信息依赖型', A: 10, fullMark: 100, color: COLORS.blue },
-  { subject: '风险感知型', A: 60, fullMark: 100, color: COLORS.orange }, 
-  { subject: '价格敏感型', A: 20, fullMark: 100, color: COLORS.cyan },
-  { subject: '习惯/其他', A: 10, fullMark: 100, color: COLORS.gray },
+  { subject: UserType.PriceSensitive, A: 45000, fullMark: 100000, color: COLORS.cyan },
+  { subject: UserType.RangeAnxiety, A: 32000, fullMark: 100000, color: COLORS.orange },
+  { subject: UserType.ServiceSensitive, A: 18000, fullMark: 100000, color: COLORS.blue },
+  { subject: UserType.TimeSensitive, A: 15500, fullMark: 100000, color: COLORS.purple },
 ];
 
 export const USER_BEHAVIOR_SCORES: Record<string, UserProfileData[]> = {
-  '价格敏感型': [
-    { subject: '价格敏感度', A: 95, fullMark: 100 },
-    { subject: '时间灵活性', A: 80, fullMark: 100 },
-    { subject: '信息依赖度', A: 40, fullMark: 100 },
-    { subject: '风险厌恶度', A: 30, fullMark: 100 },
-    { subject: '社交影响度', A: 20, fullMark: 100 },
+  [UserType.PriceSensitive]: [
+    { subject: '价格弹性', A: 95, fullMark: 100 },
+    { subject: '时间弹性', A: 85, fullMark: 100 },
+    { subject: '里程容忍', A: 60, fullMark: 100 },
+    { subject: '补能效率需求', A: 30, fullMark: 100 },
+    { subject: '地点弹性', A: 75, fullMark: 100 },
   ],
-  '风险感知型': [
-    { subject: '价格敏感度', A: 30, fullMark: 100 },
-    { subject: '时间灵活性', A: 20, fullMark: 100 },
-    { subject: '信息依赖度', A: 85, fullMark: 100 },
-    { subject: '风险厌恶度', A: 90, fullMark: 100 },
-    { subject: '社交影响度', A: 60, fullMark: 100 },
+  [UserType.RangeAnxiety]: [
+    { subject: '价格弹性', A: 40, fullMark: 100 },
+    { subject: '时间弹性', A: 40, fullMark: 100 },
+    { subject: '里程容忍', A: 15, fullMark: 100 },
+    { subject: '补能效率需求', A: 70, fullMark: 100 },
+    { subject: '地点弹性', A: 30, fullMark: 100 },
   ],
-  '信息依赖型': [
-    { subject: '价格敏感度', A: 50, fullMark: 100 },
-    { subject: '时间灵活性', A: 60, fullMark: 100 },
-    { subject: '信息依赖度', A: 95, fullMark: 100 },
-    { subject: '风险厌恶度', A: 40, fullMark: 100 },
-    { subject: '社交影响度', A: 75, fullMark: 100 },
+  [UserType.ServiceSensitive]: [
+    { subject: '价格弹性', A: 20, fullMark: 100 },
+    { subject: '时间弹性', A: 60, fullMark: 100 },
+    { subject: '里程容忍', A: 50, fullMark: 100 },
+    { subject: '补能效率需求', A: 95, fullMark: 100 },
+    { subject: '地点弹性', A: 40, fullMark: 100 },
   ],
-  '习惯/其他': [
-    { subject: '价格敏感度', A: 10, fullMark: 100 },
-    { subject: '时间灵活性', A: 10, fullMark: 100 },
-    { subject: '信息依赖度', A: 30, fullMark: 100 },
-    { subject: '风险厌厌度', A: 50, fullMark: 100 },
-    { subject: '社交影响度', A: 40, fullMark: 100 },
+  [UserType.TimeSensitive]: [
+    { subject: '价格弹性', A: 30, fullMark: 100 },
+    { subject: '时间弹性', A: 10, fullMark: 100 },
+    { subject: '里程容忍', A: 40, fullMark: 100 },
+    { subject: '补能效率需求', A: 85, fullMark: 100 },
+    { subject: '地点弹性', A: 20, fullMark: 100 },
   ],
 };
 
+// Cluster specific behavioral modifiers
+export const CLUSTER_BEHAVIOR_MODIFIERS: Record<string, Record<string, number>> = {
+    'C-001': { // Taxi: High Range Anxiety, High Price Sensitive
+        [UserType.PriceSensitive]: 1.5,
+        [UserType.RangeAnxiety]: 1.8,
+        [UserType.ServiceSensitive]: 1.2,
+        [UserType.TimeSensitive]: 0.5
+    },
+    'C-002': { // Commuter: High Time Sensitive, Low Price Sensitive
+        [UserType.PriceSensitive]: 0.4,
+        [UserType.RangeAnxiety]: 0.6,
+        [UserType.ServiceSensitive]: 0.8,
+        [UserType.TimeSensitive]: 2.0
+    },
+    'C-003': { // Logistics: High Service Sensitive (Fast charge), High Range Anxiety
+        [UserType.PriceSensitive]: 1.2,
+        [UserType.RangeAnxiety]: 1.5,
+        [UserType.ServiceSensitive]: 1.8,
+        [UserType.TimeSensitive]: 1.2
+    },
+    'C-004': { // Ride-hailing: Balanced
+        [UserType.PriceSensitive]: 1.6,
+        [UserType.RangeAnxiety]: 1.2,
+        [UserType.ServiceSensitive]: 1.0,
+        [UserType.TimeSensitive]: 1.0
+    },
+    'C-005': { // Commercial Mix
+        [UserType.PriceSensitive]: 0.8,
+        [UserType.RangeAnxiety]: 0.9,
+        [UserType.ServiceSensitive]: 1.5,
+        [UserType.TimeSensitive]: 1.4
+    }
+};
+
 export const FLEET_BRANDS: FleetStat[] = [
-  { name: '比亚迪', count: 450, color: '#00ffff' },
-  { name: '特斯拉', count: 320, color: '#ff4500' },
-  { name: '蔚来', count: 180, color: '#1e90ff' },
-  { name: '小鹏', count: 150, color: '#fbbf24' },
-  { name: '宝马', count: 120, color: '#a3a3a3' },
+  { name: '比亚迪', count: 125000, color: '#00ffff' },
+  { name: '特斯拉', count: 68000, color: '#ff4500' },
+  { name: '蔚来', count: 32000, color: '#1e90ff' },
+  { name: '小鹏', count: 28000, color: '#fbbf24' },
+  { name: '埃安', count: 18500, color: '#a3a3a3' },
+  { name: '宝马', count: 13500, color: '#3b82f6' },
 ];
 
 export const VEHICLE_CLUSTERS: VehicleCluster[] = [
-    { id: 'C-001', name: '全市出租车群 A', region: '全域', count: 120, avgSoc: 45, type: 'Operational', regulationCapacity: 15.2 },
-    { id: 'C-002', name: '南山科技园通勤群', region: '南山区', count: 85, avgSoc: 72, type: 'Private', regulationCapacity: 8.5 },
-    { id: 'C-003', name: '福田物流配送群', region: '福田区', count: 40, avgSoc: 30, type: 'Logistics', regulationCapacity: 12.0 },
-    { id: 'C-004', name: '宝安网约车群 B', region: '宝安区', count: 150, avgSoc: 55, type: 'Operational', regulationCapacity: 20.1 },
-    { id: 'C-005', name: '罗湖商业中心群', region: '罗湖区', count: 60, avgSoc: 80, type: 'Private', regulationCapacity: 5.4 },
-    { id: 'C-006', name: '龙岗工业区物流群', region: '龙岗区', count: 95, avgSoc: 40, type: 'Logistics', regulationCapacity: 18.3 },
-    { id: 'C-007', name: '全市公务车群', region: '全域', count: 30, avgSoc: 90, type: 'Special', regulationCapacity: 2.1 },
-    { id: 'C-008', name: '夜间充电价格敏感群', region: '全域', count: 200, avgSoc: 20, type: 'Private', regulationCapacity: 25.0 },
+    { 
+      id: 'C-001', name: '全市出租车群 A', region: '全域', count: 42000, avgSoc: 45, type: '运营主导', 
+      composition: { operational: 0.92, private: 0.05, logistics: 0.03 },
+      regulationCapacity: 125.2 
+    },
+    { 
+      id: 'C-002', name: '南山科技园通勤群', region: '南山区', count: 28500, avgSoc: 72, type: '私家主导', 
+      composition: { operational: 0.10, private: 0.85, logistics: 0.05 },
+      regulationCapacity: 68.5 
+    },
+    { 
+      id: 'C-003', name: '福田物流配送群', region: '福田区', count: 12000, avgSoc: 30, type: '物流主导', 
+      composition: { operational: 0.05, private: 0.05, logistics: 0.90 },
+      regulationCapacity: 45.0 
+    },
+    { 
+      id: 'C-004', name: '宝安网约车群 B', region: '宝安区', count: 55000, avgSoc: 55, type: '运营主导', 
+      composition: { operational: 0.88, private: 0.08, logistics: 0.04 },
+      regulationCapacity: 150.1 
+    },
+    { 
+      id: 'C-005', name: '罗湖商业中心群', region: '罗湖区', count: 18000, avgSoc: 80, type: '混合型', 
+      composition: { operational: 0.30, private: 0.60, logistics: 0.10 },
+      regulationCapacity: 35.4 
+    },
 ];
 
 const LAT_START = 22.48; 
 const LAT_END = 22.62;   
 const LON_START = 113.95; 
 const LON_END = 114.22;   
-
 const ROWS = 5;
 const COLS = 5;
 const LAT_STEP = (LAT_END - LAT_START) / ROWS;
 const LON_STEP = (LON_END - LON_START) / COLS;
 
-const EXCLUDED_INDICES = [0, 4, 20, 24, 2];
-
 export const GRID_ZONES: GridZone[] = Array.from({ length: 25 }, (_, i) => {
-    if (EXCLUDED_INDICES.includes(i)) return null;
+    if ([0, 4, 20, 24, 2].includes(i)) return null;
     return {
         id: `G-${i}`,
         load: Math.floor(Math.random() * 50) + 30, 
         optimizedLoad: 0,
-        vehicleCount: Math.floor(Math.random() * 50),
+        vehicleCount: Math.floor(Math.random() * 8000) + 2000,
         x: i % 5,
         y: Math.floor(i / 5),
     };
 }).filter((z): z is GridZone => z !== null);
 
-export const generateVehicles = (count: number, gridId?: string): Vehicle[] => {
-  const models = ['比亚迪 汉', 'Tesla Model 3', '蔚来 ES6', 'BMW i3', '广汽 Aion'];
-  const types: Vehicle['type'][] = ['Operational', 'Private', 'Special', 'Logistics'];
-  const userTypes: Vehicle['userType'][] = ['Info', 'Risk', 'Price', 'Unknown'];
-  
-  const availableGridIds = GRID_ZONES.map(z => z.id);
-
-  return Array.from({ length: count }, (_, i) => ({
-    id: `v-${i}`,
-    plate: `A-${Math.floor(Math.random()*10000)}`,
-    model: models[Math.floor(Math.random() * models.length)],
-    type: types[Math.floor(Math.random() * types.length)],
-    soc: Math.floor(Math.random() * 100),
-    gridId: gridId || availableGridIds[Math.floor(Math.random() * availableGridIds.length)],
-    userType: userTypes[Math.floor(Math.random() * userTypes.length)],
-  }));
-};
-
-const seedRand = (seed: number) => {
-    let x = Math.sin(seed) * 10000;
+// --- Irregular Grid Generation with Jitter ---
+const VERTICES: [number, number][][] = [];
+// Random seed simulation function to keep shapes consistent across re-renders
+const pseudoRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
 };
-
-const VERTICES: [number, number][][] = [];
 
 for (let r = 0; r <= ROWS; r++) {
     const rowVertices: [number, number][] = [];
     for (let c = 0; c <= COLS; c++) {
         let lat = LAT_END - (r * LAT_STEP);
         let lon = LON_START + (c * LON_STEP);
-        const variance = 0.35; 
-        const rndLat = seedRand(r * 150 + c) - 0.5; 
-        const rndLon = seedRand(r * 300 + c) - 0.5;
-        lat += rndLat * LAT_STEP * variance; 
-        lon += rndLon * LON_STEP * variance;
+
+        // Add "Jitter" to internal vertices to create irregular polygons
+        // We avoid jittering the outer boundary to keep the map rectangular-ish overall
+        if (r > 0 && r < ROWS && c > 0 && c < COLS) {
+            const jitterLat = (pseudoRandom(r * c + 1) - 0.5) * (LAT_STEP * 0.7);
+            const jitterLon = (pseudoRandom(r * c + 2) - 0.5) * (LON_STEP * 0.7);
+            lat += jitterLat;
+            lon += jitterLon;
+        }
+
         rowVertices.push([lat, lon]);
     }
     VERTICES.push(rowVertices);
 }
 
 export const GRID_SHAPES: Record<string, [number, number][]> = {};
-
 GRID_ZONES.forEach(zone => {
-    const r = zone.y;
-    const c = zone.x;
-    const p1 = VERTICES[r][c];
-    const p2 = VERTICES[r][c+1];
-    const p3 = VERTICES[r+1][c+1];
-    const p4 = VERTICES[r+1][c];
-    GRID_SHAPES[zone.id] = [p1, p2, p3, p4];
+    const r = zone.y; const c = zone.x;
+    // Map grid cell to vertices: Top-Left, Top-Right, Bottom-Right, Bottom-Left
+    GRID_SHAPES[zone.id] = [VERTICES[r][c], VERTICES[r][c+1], VERTICES[r+1][c+1], VERTICES[r+1][c]];
 });
 
 export const getPolygonCenter = (points: [number, number][]): [number, number] => {
@@ -213,31 +217,38 @@ export const getPolygonCenter = (points: [number, number][]): [number, number] =
     return [lat / points.length, lon / points.length];
 };
 
-const TRANSFER_MAP: Record<string, string[]> = {
-    'G-12': ['G-11', 'G-13', 'G-07', 'G-09'], 
-    'G-7': ['G-06', 'G-08', 'G-01'], 
-    'G-17': ['G-16', 'G-18', 'G-22'],
-};
+export const getTransferData = (sourceId: string, time: number = 12): TransferItem[] => {
+    // Deterministic selection of targets based on ID
+    const sourceIndex = parseInt(sourceId.split('-')[1]);
+    
+    // Select 3 fixed targets for this source to ensure lines don't jump around
+    const targets = GRID_ZONES
+        .filter(z => z.id !== sourceId)
+        .sort((a, b) => {
+            // Pseudo-random but deterministic sort based on ID diff
+            const idA = parseInt(a.id.split('-')[1]);
+            const idB = parseInt(b.id.split('-')[1]);
+            const scoreA = (idA * sourceIndex * 13) % 100;
+            const scoreB = (idB * sourceIndex * 13) % 100;
+            return scoreA - scoreB;
+        })
+        .slice(0, 3);
 
-export const getTransferData = (sourceId: string, time?: number): TransferItem[] => {
-    const timeFactor = time !== undefined ? (Math.sin((time - 12) / 4) * 0.5 + 1.0) : 1.0;
-    if (sourceId === 'G-12') {
-        return [
-            { target: 'G-11', amount: parseFloat((12.5 * timeFactor).toFixed(1)) },
-            { target: 'G-13', amount: parseFloat((8.2 * timeFactor).toFixed(1)) },
-            { target: 'G-07', amount: parseFloat((5.1 * timeFactor).toFixed(1)) },
-            { target: '储能', amount: parseFloat((3.0 * timeFactor).toFixed(1)) }, 
-            { target: 'V2G回馈', amount: parseFloat((1.8 * timeFactor).toFixed(1)) },
-            { target: 'G-09', amount: parseFloat((0.5 * timeFactor).toFixed(1)) },
-        ];
-    }
-    let targets = TRANSFER_MAP[sourceId];
-    if (!targets) {
-        const neighbors = GRID_ZONES.filter(z => z.id !== sourceId).slice(0, 3).map(z => z.id);
-        targets = neighbors;
-    }
-    return targets.map(targetId => ({
-        target: targetId,
-        amount: parseFloat((Math.random() * 10 * timeFactor).toFixed(1))
-    }));
+    return targets.map(z => {
+        const targetIndex = parseInt(z.id.split('-')[1]);
+        // Create a smooth wave based on time for the amount
+        // Adding phase shift based on IDs so all lines don't pulse in sync
+        const phase = (sourceIndex * 3 + targetIndex * 7);
+        // Normalize time to 0-1 range for sin wave
+        const timeRad = (time / 24) * Math.PI * 4; // 2 cycles per day
+        
+        // Value oscillates between 10 and 90 smoothly
+        const rawSine = Math.sin(timeRad + phase);
+        const amount = 50 + (rawSine * 40); 
+        
+        return {
+            target: z.id,
+            amount: parseFloat(amount.toFixed(1))
+        };
+    });
 };

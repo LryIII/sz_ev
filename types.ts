@@ -17,16 +17,17 @@ export interface PricingDataPoint {
 
 export interface ClusterLoadPoint {
   time: string;
-  [UserType.InfoDependent]: number;
-  [UserType.RiskAware]: number;
   [UserType.PriceSensitive]: number;
-  [UserType.Unknown]: number;
+  [UserType.RangeAnxiety]: number;
+  [UserType.ServiceSensitive]: number;
+  [UserType.TimeSensitive]: number;
 }
 
 export interface UserProfileData {
   subject: string;
-  A: number; // Selected Region/Global
+  A: number; // Intensity/Score for radar or count for pie
   fullMark: number;
+  color?: string;
 }
 
 export interface FleetStat {
@@ -35,18 +36,22 @@ export interface FleetStat {
   color: string;
 }
 
-// Aggregated Cluster instead of individual vehicle
+// Aggregated Cluster with mixed compositions
 export interface VehicleCluster {
   id: string;
   name: string;
   region: string;
   count: number;
   avgSoc: number;
-  type: 'Operational' | 'Private' | 'Special' | 'Logistics';
+  type: string; // Dominant type label
+  composition: {
+    operational: number; // percentage 0-1
+    private: number;
+    logistics: number;
+  };
   regulationCapacity: number; // MW
 }
 
-// Individual vehicle
 export interface Vehicle {
   id: string;
   plate: string;
@@ -54,7 +59,7 @@ export interface Vehicle {
   type: 'Operational' | 'Private' | 'Special' | 'Logistics';
   soc: number;
   gridId: string;
-  userType: 'Info' | 'Risk' | 'Price' | 'Unknown';
+  userType: UserType;
 }
 
 export interface GridZone {
@@ -67,10 +72,10 @@ export interface GridZone {
 }
 
 export enum UserType {
-  InfoDependent = "Info-Dependent",
-  RiskAware = "Risk-Aware",
-  PriceSensitive = "Price-Sensitive",
-  Unknown = "Unknown"
+  PriceSensitive = "价格敏感型",
+  RangeAnxiety = "里程焦虑型",
+  ServiceSensitive = "服务敏感型",
+  TimeSensitive = "时间敏感型"
 }
 
 export interface Alert {

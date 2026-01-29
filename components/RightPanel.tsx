@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card } from './ui/Card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart, Line, Legend } from 'recharts';
@@ -165,7 +166,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         titleRight={
             selectedClusterId !== 'all' ? (
                 <span className="text-tech-cyan text-[10px] font-bold border border-tech-cyan/30 px-2 py-0.5 rounded bg-tech-cyan/5">
-                    Focused: {VEHICLE_CLUSTERS.find(c => c.id === selectedClusterId)?.name || selectedClusterId}
+                    当前聚焦: {VEHICLE_CLUSTERS.find(c => c.id === selectedClusterId)?.name || selectedClusterId}
                 </span>
             ) : <span className="text-tech-dim text-[10px]">全市视角</span>
         }
