@@ -1,3 +1,4 @@
+
 export interface LoadDataPoint {
   time: string;
   actual: number | null;
@@ -41,16 +42,16 @@ export interface VehicleCluster {
   region: string;
   count: number;
   avgSoc: number;
-  type: 'Operational' | 'Private' | 'Special';
+  type: 'Operational' | 'Private' | 'Special' | 'Logistics';
   regulationCapacity: number; // MW
 }
 
-// Individual vehicle kept for compatibility if needed, but not primarily displayed in list
+// Individual vehicle
 export interface Vehicle {
   id: string;
   plate: string;
   model: string;
-  type: 'Operational' | 'Private' | 'Special';
+  type: 'Operational' | 'Private' | 'Special' | 'Logistics';
   soc: number;
   gridId: string;
   userType: 'Info' | 'Risk' | 'Price' | 'Unknown';
@@ -78,4 +79,9 @@ export interface Alert {
   message: string;
   timestamp: number;
   targetId?: string;
+}
+
+export interface TransferItem {
+    target: string;
+    amount: number;
 }

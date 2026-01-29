@@ -8,7 +8,7 @@ import { COLORS, getTransferData, VEHICLE_CLUSTERS } from '../constants';
 interface RightPanelProps {
   loadData: LoadDataPoint[];
   currentGridId: string | null;
-  selectedCluster?: VehicleCluster | null;
+  selectedClusterId: string;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -17,7 +17,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <div className="bg-tech-bg border border-tech-cyan/50 p-2 text-xs shadow-[0_0_10px_#00ffff44]">
         <p className="font-mono text-tech-cyanGlow mb-1">{label}</p>
         {payload.map((p: any, idx: number) => {
-          // Handle array value (Range)
           if (p.name === '调节范围' && Array.isArray(p.value)) {
               return (
                  <div key={idx} className="flex justify-between gap-4" style={{ color: p.color }}>
@@ -45,27 +44,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const RightPanel: React.FC<RightPanelProps> = ({ 
   loadData, 
-  currentGridId
+  currentGridId,
+  selectedClusterId
 }) => {
-  const [selectedClusterId, setSelectedClusterId] = useState<string>('all');
-  const [priceIncentive, setPriceIncentive] = useState<number>(1.5); // Default price 1.5
+  const [priceIncentive, setPriceIncentive] = useState<number>(1.5);
 
-  // Calculate transfer data based on grid AND selected cluster AND price incentive
   const transferData = useMemo(() => {
     if (!currentGridId) return [];
     
-    const baseData = getTransferData(currentGridId);
+    const baseData = getTransferData(currentGridId, 14.5);
     
-    // 1. Cluster Filter Factor
     let clusterFactor = 1.0;
     if (selectedClusterId !== 'all') {
         const idNum = parseInt(selectedClusterId.replace(/\D/g, '') || '5');
         clusterFactor = 0.2 + ((idNum % 5) * 0.1); 
     }
 
-    // 2. Price Incentive Factor (Illustrative Logic)
-    // Higher price = Higher participation/transfer amount
-    // Base is 1.0 at price 1.5. Curve is slightly exponential.
     const priceFactor = 0.5 + (Math.pow(priceIncentive, 1.2) / 2.5);
 
     return baseData.map(item => ({
@@ -74,21 +68,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }));
   }, [currentGridId, selectedClusterId, priceIncentive]);
 
-
-  // Map data to include [min, max] range for the Area chart
   const rangeData = loadData.map(d => ({
       ...d,
       regulationRange: [d.lowerBound || 0, d.upperBound || 0]
   }));
 
   const totalTransfer = transferData.reduce((acc, curr) => acc + curr.amount, 0).toFixed(1);
-  const projectedCostReduction = (priceIncentive * 8.5).toFixed(1); // Fake metric linked to price
-  const transferRatio = (25 + priceIncentive * 11).toFixed(1); // Calculate ratio based on price
+  const projectedCostReduction = (priceIncentive * 8.5).toFixed(1);
+  const transferRatio = (25 + priceIncentive * 11).toFixed(1);
 
   return (
     <div className="flex flex-col h-full gap-4">
       
-      {/* 1. Load Forecast (Added back) */}
       <Card 
         title="区域/总体负荷趋势预测" 
         className="flex-[3] min-h-0" 
@@ -127,7 +118,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </ResponsiveContainer>
       </Card>
 
-      {/* 2. Regulation Capability Analysis */}
       <Card 
         title="调节能力范围分析" 
         className="flex-[3] min-h-0"
@@ -142,7 +132,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }} iconSize={8} />
                 
-                {/* Regulation Capacity Range (Band) */}
                 <Area 
                     type="monotone" 
                     dataKey="regulationRange" 
@@ -170,31 +159,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </div>
       </Card>
 
-      {/* 3. Transfer Capability Analysis */}
       <Card 
         title="车群区域转移能力分析" 
         className="flex-[4] min-h-0"
         titleRight={
-            <div className="relative z-20">
-                <select
-                    value={selectedClusterId}
-                    onChange={(e) => setSelectedClusterId(e.target.value)}
-                    className="bg-black/50 border border-tech-cyan/30 text-tech-cyan text-[10px] py-1 pl-2 pr-6 rounded appearance-none focus:outline-none focus:border-tech-cyanGlow cursor-pointer hover:bg-white/5 transition-colors"
-                >
-                    <option value="all">全部车群 (总体)</option>
-                    {VEHICLE_CLUSTERS.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
-                <ChevronDown size={10} className="absolute right-1.5 top-2 text-tech-cyan pointer-events-none" />
-            </div>
+            selectedClusterId !== 'all' ? (
+                <span className="text-tech-cyan text-[10px] font-bold border border-tech-cyan/30 px-2 py-0.5 rounded bg-tech-cyan/5">
+                    Focused: {VEHICLE_CLUSTERS.find(c => c.id === selectedClusterId)?.name || selectedClusterId}
+                </span>
+            ) : <span className="text-tech-dim text-[10px]">全市视角</span>
         }
       >
         <div className="flex flex-col h-full gap-2">
             
-            {/* Price Regulation Slider (Replaces Suggestion Box) */}
             <div className="bg-tech-bg/40 border border-tech-cyan/20 p-2 rounded shrink-0 relative overflow-hidden">
-                {/* Subtle Grid Background */}
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#06b6d4_1px,transparent_1px)] [background-size:8px_8px]"></div>
                 
                 <div className="relative z-10 flex flex-col gap-1">
@@ -231,7 +209,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 </div>
             </div>
 
-            {/* Transfer Visualization */}
             <div className="flex-1 flex flex-col justify-start gap-2 overflow-y-auto custom-scrollbar pr-1 pt-1">
                 {currentGridId ? (
                     transferData.map((t, i) => (

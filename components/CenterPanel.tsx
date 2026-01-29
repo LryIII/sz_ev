@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Link, Link2Off, ArrowDown, Map as MapIcon, RotateCcw } from 'lucide-react';
-import { GridZone, Vehicle } from '../types';
+import { GridZone, Vehicle, TransferItem } from '../types';
 import { GRID_SHAPES, getTransferData, getPolygonCenter } from '../constants';
 import L from 'leaflet';
 
@@ -128,11 +128,11 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
             background-color: #06b6d4 !important;
             color: #000 !important;
         }
-        /* Pulse Animation for Targets - High Visibility */
+        /* Pulse Animation for High Potential Targets */
         @keyframes pulse-target-border {
-            0% { stroke: #22c55e; stroke-width: 2; stroke-opacity: 0.8; }
-            50% { stroke: #86efac; stroke-width: 4; stroke-opacity: 1; }
-            100% { stroke: #22c55e; stroke-width: 2; stroke-opacity: 0.8; }
+            0% { stroke-opacity: 0.6; stroke-width: 2; }
+            50% { stroke-opacity: 1; stroke-width: 4; }
+            100% { stroke-opacity: 0.6; stroke-width: 2; }
         }
         .target-zone-pulse {
             animation: pulse-target-border 2s infinite ease-in-out;
@@ -142,7 +142,7 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
             to { stroke-dashoffset: -20; }
         }
         .transfer-line {
-            animation: dash-flow 1s linear infinite;
+            animation: dash-flow 0.8s linear infinite;
         }
       `}</style>
 
@@ -217,7 +217,7 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
       <div className="flex-1 relative flex flex-col border border-tech-green/20 rounded bg-tech-bg/50 overflow-hidden min-h-[200px]">
          <div className="absolute top-2 left-2 z-[400] bg-black/80 backdrop-blur px-2 py-1 rounded text-xs text-tech-green border border-tech-green/50 shadow-lg font-bold flex items-center gap-2 pointer-events-none">
             <MapIcon size={12} />
-            <span>Map B: 转移优化后负荷 (Optimized)</span>
+            <span>Map B: 区域负荷时空转移潜力</span>
          </div>
          
          <div className="relative w-full h-full z-0">
@@ -323,8 +323,9 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
 
         // Determine targets for Map B highlighting using shared logic
         let targetZones: string[] = [];
+        let transferItems: TransferItem[] = [];
         if (scenario === 'optimized' && currentGrid) {
-            const transferItems = getTransferData(currentGrid);
+            transferItems = getTransferData(currentGrid, time);
             targetZones = transferItems.map(item => item.target);
         }
 
@@ -346,6 +347,10 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
             const isTarget = targetZones.includes(zone.id);
             const isOverload = currentLoad > 85;
 
+            // Find specific transfer amount for this zone if it's a target
+            const transferItem = isTarget ? transferItems.find(t => t.target === zone.id) : null;
+            const amount = transferItem?.amount || 0;
+
             // --- Styling Logic ---
             let color = '#06b6d4'; // Cyan default
             let fillOpacity = currentLoad / 200;
@@ -357,7 +362,6 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
                 if (isOverload) { color = '#ef4444'; fillOpacity = 0.5; } // Red
                 
                 if (isSelected) {
-                    // Fix: If selected and overload, Keep Red, but use White Border
                     if (isOverload) {
                         color = '#ef4444';
                         fillOpacity = 0.8;
@@ -371,24 +375,35 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
                 }
             } 
             else if (scenario === 'optimized') {
-                // Focus Mode logic
                 if (currentGrid) {
                     if (isSelected) {
-                        // Source
                         color = '#ef4444'; 
                         fillOpacity = 0.7;
                         strokeColor = '#ffffff';
                         strokeWidth = 3;
                     } else if (isTarget) {
-                        // Target
-                        color = '#22c55e';
-                        fillOpacity = 0.6;
-                        strokeColor = '#22c55e';
-                        strokeWidth = 2;
-                        className += ' target-zone-pulse'; 
+                        // Dynamic Green: Higher transfer amount = Brighter green
+                        // Low potential (<5MW) = Gray-green (#526d5e)
+                        // High potential (>10MW) = Bright green (#22c55e)
+                        const potentialScale = Math.min(1, amount / 12);
+                        
+                        if (potentialScale > 0.6) {
+                            color = '#22c55e'; // Vibrant Green
+                            className += ' target-zone-pulse';
+                            strokeColor = '#4ade80';
+                            strokeWidth = 2;
+                        } else if (potentialScale > 0.3) {
+                            color = '#4ade80'; // Medium Green
+                            strokeColor = '#4ade80';
+                            strokeWidth = 1;
+                        } else {
+                            color = '#526d5e'; // Gray-green for weak targets
+                            strokeColor = '#64748b';
+                            strokeWidth = 1;
+                        }
+                        
+                        fillOpacity = 0.4 + (potentialScale * 0.4);
                     } else {
-                        // Background
-                        // Fix: If background node is still overloaded, show it as Dim Red instead of Gray
                         if (isOverload) {
                             color = '#ef4444';
                             fillOpacity = 0.3; 
@@ -400,7 +415,6 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
                         }
                     }
                 } else {
-                    // Normal Heatmap if nothing selected
                     if (isOverload) { color = '#ef4444'; fillOpacity = 0.4; }
                     else if (currentLoad > 40 && currentLoad < 75) { color = '#22c55e'; fillOpacity = 0.3; }
                     else { color = '#eab308'; fillOpacity = 0.3; }
@@ -420,11 +434,10 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
             poly.on('click', () => onGridSelect(isSelected ? null : zone.id));
             
             // Tooltip Logic
-            // NEW: Add return prompt for selected grid
             let tooltipContent = `
                 <div class="font-mono text-xs">
                     <div class="font-bold text-white">${zone.id}</div>
-                    ${isTarget ? '<div class="text-green-400 font-bold mt-1">Accepting Load</div>' : ''}
+                    ${isTarget ? `<div class="text-green-400 font-bold mt-1">潜力: ${amount} MW</div>` : ''}
                 </div>
             `;
             
@@ -457,25 +470,33 @@ const LeafletMapInstance: React.FC<LeafletMapInstanceProps> = ({
                     const p1 = getPolygonCenter(sourceShape);
                     const p2 = getPolygonCenter(targetShape);
                     
+                    // Scale line visual properties by amount
+                    const weight = Math.max(1.5, amount / 3);
+                    const opacity = 0.4 + (amount / 20);
+                    
                     // Main dashed line
                     L.polyline([p1, p2], {
-                        color: '#4ade80',
-                        weight: 2,
-                        dashArray: '5, 5',
-                        opacity: 0.9,
+                        color: amount > 8 ? '#22c55e' : '#64748b', // Stronger color for high transfer
+                        weight: weight,
+                        dashArray: '8, 8',
+                        opacity: opacity,
                         className: 'transfer-line'
                     }).addTo(lineGroup);
 
-                    // Add a directional arrow head at 70% distance
+                    // Add a directional arrow head at 75% distance
                     const angle = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]) * 180 / Math.PI;
-                    const midLat = p1[0] + (p2[0] - p1[0]) * 0.7;
-                    const midLon = p1[1] + (p2[1] - p1[1]) * 0.7;
+                    const midLat = p1[0] + (p2[0] - p1[0]) * 0.75;
+                    const midLon = p1[1] + (p2[1] - p1[1]) * 0.75;
                     
                     const arrowIcon = L.divIcon({
                         className: '',
-                        html: `<div style="transform: rotate(${angle}deg); color: #4ade80;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15 11H9L12 2Z" /></svg></div>`,
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
+                        html: `<div style="transform: rotate(${angle}deg); color: ${amount > 8 ? '#22c55e' : '#94a3b8'}; opacity: ${opacity + 0.2};">
+                                <svg width="${10 + weight}" height="${10 + weight}" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2L18 12H6L12 2Z" />
+                                </svg>
+                               </div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
                     });
                     
                     L.marker([midLat, midLon], { icon: arrowIcon }).addTo(lineGroup);
